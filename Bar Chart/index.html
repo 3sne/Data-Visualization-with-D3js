@@ -15,10 +15,21 @@
     <div id="title-div">
         <h1 id="title"> Gross Domestic Product, US</h1>
     </div>
-    <div id="graph-div">
-        
-    </div>
+    <div id="graph-div"></div>
+    
     <script>
+        
+        const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
+        const dataset = [];
+        let req = new XMLHttpRequest();
+        req.open("GET",url,true);
+        req.send();
+        req.onload = () => {
+            let json = JSON.parse(req.responseText);
+            dataset = json.data;
+            console.log(json.data);
+        }
+        
         
     </script>
 </body>
