@@ -1,0 +1,24 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#title-div {
+    height: 240px;
+    width: 100vw;
+    background-image: url("./img/cyan-red-ice-fire.jpg");
+    
+    display: table;
+}
+
+#title {
+    
+    font-family: 'Muli', sans-serif;
+
+    font-size: 62px;
+    color: white;
+
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
