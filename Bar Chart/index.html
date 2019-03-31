@@ -18,19 +18,69 @@
     <div id="graph-div"></div>
     
     <script>
-        
+
         const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
-        const dataset = [];
         let req = new XMLHttpRequest();
         req.open("GET",url,true);
         req.send();
         req.onload = () => {
             let json = JSON.parse(req.responseText);
-            dataset = json.data;
-            console.log(json.data);
+            const dataset = json.data;
+            
+            const getDate = (thisDate) => new Date(thisDate);
+            const h = 500;
+            const w = 1000;
+            const pad = 65;
+            const topPad = 20;
+            //scale
+            let firstDate = getDate(dataset[0][0]);
+            let lastDate = getDate(dataset[dataset.length - 1][0]);
+            const xScale = d3.scaleTime()
+                            .domain([firstDate, lastDate])
+                            .range([pad, w - pad]);
+
+            const yScale = d3.scaleLinear()
+                            .domain([0, d3.max(dataset, (d) => d[1])])
+                            .range([h - pad, pad]);
+
+            console.log(yScale(300));
+            console.log(yScale(10000));
+
+            //svg
+            const svg = d3.select("#graph-div")
+                          .append("svg")
+                          .attr("width", w)
+                          .attr("height", h);
+
+            //bars
+            svg.selectAll("rect")
+               .data(dataset)
+               .enter()
+               .append("rect")
+               .attr("class", "bar")
+               .attr("fill", "cyan")
+               .attr("x", (d, i) => xScale(getDate(d[0])))
+               .attr("y", (d, i) => yScale(d[1]))
+               .attr("width", (w - pad*2) / dataset.length)
+               .attr("height", (d, i) => h - yScale(d[1]) - pad);
+            
+            //axes
+            const xAxis = d3.axisBottom(xScale);
+            const yAxis = d3.axisLeft(yScale);
+            svg.append("g")
+               .attr("id", "x-axis")
+               .attr("transform", "translate(0, " + (h - pad) + ")")
+               .style("font-size", 16 + "px")
+               .call(xAxis);
+
+            svg.append("g")
+               .attr("id", "y-axis")
+               .attr("transform", "translate(" + pad + ", 0)")
+               .style("font-size", 16 + "px")
+               .call(yAxis);
+
         }
-        
-        
+
     </script>
 </body>
 </html>
