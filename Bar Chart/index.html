@@ -16,7 +16,6 @@
         <h1 id="title"> Gross Domestic Product, US</h1>
     </div>
     <div id="graph-div"></div>
-    
     <script>
 
         const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
@@ -31,7 +30,6 @@
             const h = 600;
             const w = 1200;
             const pad = 65;
-            const topPad = 20;
             //scale
             let firstDate = getDate(dataset[0][0]);
             let lastDate = getDate(dataset[dataset.length - 1][0]);
@@ -72,11 +70,11 @@
                .on('mouseover', function (d, i) {
                     d3.select(this).transition()
                         .duration('10')
-                        .attr('fill', 'red');
+                        .attr('fill', 'yellow');
                     let txt = d[0] + "\n$" + d[1] + " bn"
                     div.html(txt)
-                        .style("left", ((d3.event.pageX + 10)) + "px")
-                        .style("top", ((d3.event.pageY - 10)) + "px");
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 100) + "px");
                     div.transition()
                         .duration(50)
                         .style("opacity", 1);
@@ -105,6 +103,11 @@
                .style("font-size", 16 + "px")
                .call(yAxis);
 
+            svg.append("text")
+               .text("GDP in billion $")
+               .attr("x", 200)
+               .attr("y", -80)
+               .attr("class", "text-label");
         }
 
     </script>
