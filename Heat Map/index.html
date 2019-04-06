@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- CDNs -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Muli:300" rel="stylesheet">
+    <link href="main.css" rel="stylesheet">
+    <title>Scatter Plot Data Viz</title>
+</head>
+<body>
+    <div id="top">
+        <div id='title'>Monthly Global Land-Surface Temperature</div>
+        <div id='description'>1753 - 2015: base temperature 8.66 °C</div>
+    </div>
+    <div id="graph-div"></div>
+    <div id="legend"></div>
+    <script>
+
+        const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json';
+        let req = new XMLHttpRequest();
+        req.open("GET",url,true);
+        req.send();
+        req.onload = () => {
+            let json = JSON.parse(req.responseText);
+            const dataset = json['monthlyVariance'];
+            const baseTemp = json['baseTemperature'];
+            console.log('Base temp = ', baseTemp);
+
+            const h = 600;
+            const w = 1200;
+            const pad = 65;
+            const epad = 20;
+
+            //color-selector
+            d3.schemeRdYlBu[9];
+            let normalizeVariance = d3.scaleLinear()
+                                        .domain([d3.min(dataset, (d) => baseTemp + d.variance), d3.max(dataset, (d) => baseTemp + d.variance)])
+                                        .range([1, 0]);
+
+            console.log("hey" , d3.interpolateRdYlBu(normalizeVariance(baseTemp)));
+            
+
+            //scale
+            let oldestYear = d3.min(dataset, (d) => d['year']);
+            let newestYear = d3.max(dataset, (d) => d['year']);
+            
+            const xScale = d3.scaleLinear()
+                            .domain([oldestYear, newestYear])
+                            .range([pad + epad, w - pad]);
+            console.log(xScale("1990"));
+
+            let toMonth = d3.timeParse('%m');
+            const yScale = d3.scaleTime()
+                            .domain([toMonth('12'), toMonth('1')])
+                            .range([h - pad - epad, pad]);
+            console.log("boi", yScale(toMonth(1)));
+            console.log("boi", dataset.length);
+            //svg
+            const svg = d3.select("#graph-div")
+                          .append("svg")
+                          .attr("width", w)
+                          .attr("height", h);
+
+            var div = d3.select("#graph-div").append("div")
+                        .attr("id", "tooltip")
+                        .style("opacity", 0);
+            
+
+
+            //bars
+            let bar_height = yScale(toMonth('2')) - yScale(toMonth('1'));
+            svg.selectAll("rect")
+               .data(dataset)
+               .enter()
+               .append("rect")
+               .attr("class", "cell")
+               .attr('data-year', (d, i) => d['year'])
+               .attr('data-month', (d, i) => d['month'])
+               .attr('data-temp', (d, i) =>  baseTemp + d['variance'])
+               .attr("fill", (d, i) => d3.interpolateRdYlBu(normalizeVariance(baseTemp + d['variance'])))
+               .attr("x", (d, i) => xScale(d['year']))
+               .attr("y", (d, i) => yScale(toMonth(d['month'])) - bar_height)
+               .attr("width", w * 12 / dataset.length)
+               .attr('height', bar_height)
+               .on('mouseover', function (d, i) {
+                    d3.select(this).transition()
+                        .duration('10')
+                        .attr('stroke', 'black');
+                    
+                    let fill = d3.interpolateRdYlBu(normalizeVariance(baseTemp + d['variance']));
+                    let txt = 'Temp: ' + (baseTemp + d.variance) + '<br>Variance: ' + d.variance + '<br>' + d.month + ', ' + d.year;
+
+                    div.html(txt)
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 100) + "px")
+                        .style('background', fill);
+
+                    div.transition()
+                        .duration(50)
+                        .style("opacity", 1);
+               })
+               .on('mouseout', function (d, i) {
+                    d3.select(this).transition()
+                        .duration('10')
+                        .attr('stroke', 'none');
+
+                    div.transition()
+                        .duration('50')
+                        .style("opacity", 0);
+                });
+            
+            //axes
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('.4'));
+            const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat('%B'));
+            svg.append("g")
+               .attr("id", "x-axis")
+               .attr("transform", "translate(0, " + (h - pad - epad) + ")")
+               .style("font-size", 16 + "px")
+               .call(xAxis);
+
+            svg.append("g")
+               .attr("id", "y-axis")
+               .attr("transform", "translate(" + (pad + epad) + ", 0)")
+               .style("font-size", 16 + "px")
+               .call(yAxis);
+
+            svg.append("text")
+               .text("Month")
+               .attr("x", (h - pad - epad) / 2)
+               .attr("y", -1)
+               .attr("class", "text-label-left");
+        
+            svg.append("text")
+               .text("Year")
+               .attr("x", (w - pad - epad) /2)
+               .attr("y", h - epad - 10)
+               .attr("class", "text-label-bottom");
+            
+
+            //legend
+            let lh = 100;
+            let lw = w;
+            const legend_svg = d3.select("#legend")
+                        .append("svg")
+                        .attr("width", lw)
+                        .attr("height", lh);
+
+            let colordata = [];
+            let sum = 1;
+            for (let i = 0; i < 100; i++) {
+                sum -= (1 / 100);
+                colordata[i] =  sum;
+            }
+            
+            let lowestTemp = d3.min(dataset, (d) => baseTemp + d['variance']);
+            let highestTemp = d3.max(dataset, (d) => baseTemp + d['variance']);
+            let lXScale = d3.scaleLinear()
+                        .domain([lowestTemp, highestTemp])
+                        .range([0, lw]);
+            let lXAxis = d3.axisBottom(lXScale);
+            
+            legend_svg.selectAll('rect')
+                .data(colordata)
+                .enter()
+                .append('rect')
+                .attr('x', (d, i) => i * (lw / 100))
+                .attr('y', 0)
+                .attr('width', lw / 100)
+                .attr('height', 25)
+                .attr('fill', (d, i) => d3.interpolateRdYlBu(d));
+
+            legend_svg.append("g")
+               .attr("id", "lx-axis")
+               .attr("transform", "translate(0, " + (25) + ")")
+               .style("font-size", 16 + "px")
+               .call(lXAxis);
+            
+            legend_svg.append("text")
+               .text("Temperature Scale")
+               .attr("x", (lw - 200) / 2)
+               .attr("y", lh -30)
+               .attr("class", "text-label-bottom");
+        }
+
+    </script>
+</body>
+</html>
