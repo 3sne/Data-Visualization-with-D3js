@@ -1,0 +1,73 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#title-div {
+    height: 240px;
+    width: 100vw;
+    background-image: url("./img/cyan-red-ice-fire.jpg");
+    
+    display: table;
+}
+
+#title {
+    
+    font-family: 'Muli', sans-serif;
+
+    font-size: 62px;
+    color: white;
+
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#graph-div {
+    width: 100vw;
+    margin-top: 10px;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.text-label-left {
+    transform: rotate(90deg);
+    font-family: 'Muli', sans-serif;
+    font-size: 24px;
+}
+
+.text-label-bottom {
+    font-family: 'Muli', sans-serif;
+    font-size: 24px;
+}
+
+.dot {
+    stroke: black;
+}
+
+.tooltip {
+    position: fixed;
+    overflow: hidden;
+    backdrop-filter: blur(10px);  
+    -webkit-backdrop-filter: blur(10px);
+    font-family: 'Muli', sans-serif;
+    font-size: 18px;
+    background: white;
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.tooltip::before {
+    content: '';
+    position: fixed;
+    background: brown;
+    width: 10px;
+}
+
+#legend {
+    font-family: 'Muli', sans-serif;
+    font-size: 24px;
+}

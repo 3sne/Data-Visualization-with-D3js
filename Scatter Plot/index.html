@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- CDNs -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Muli:300" rel="stylesheet">
+    <link href="main.css" rel="stylesheet">
+    <title>Scatter Plot Data Viz</title>
+</head>
+<body>
+
+    <div id="title-div">
+        <h1 id="title">35 Fastest times on Aple d'Huez</h1>
+    </div>
+    <div id="graph-div"></div>
+    <script>
+
+        const url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json';
+        let req = new XMLHttpRequest();
+        req.open("GET",url,true);
+        req.send();
+        req.onload = () => {
+            let json = JSON.parse(req.responseText);
+            const dataset = json;
+            
+            const h = 600;
+            const w = 1200;
+            const pad = 65;
+            const epad = 20;
+
+            //scale
+            let firstAttemptYear = d3.min(dataset, (d) => d['Year']) - 1;
+            let lastAttemptYear = d3.max(dataset, (d) => d['Year']);
+            console.log(firstAttemptYear, lastAttemptYear);
+            
+            const xScale = d3.scaleLinear()
+                            .domain([firstAttemptYear, lastAttemptYear])
+                            .range([pad + epad, w - pad]);
+            console.log(xScale("1990"));
+
+            let secondToDate = d3.timeParse('%s');
+            let minutesAndSeconds = d3.timeFormat('%M:%S');
+            let bestTimeInSeconds = d3.min(dataset, (d) => secondToDate(d['Seconds']));
+            let worstTimeInSeconds = d3.max(dataset, (d) => secondToDate(d['Seconds']));
+
+            const yScale = d3.scaleTime()
+                            .domain([worstTimeInSeconds, bestTimeInSeconds])
+                            .range([h - pad - epad, pad]);
+            console.log(yScale(secondToDate('2235')));
+
+            //svg
+            const svg = d3.select("#graph-div")
+                          .append("svg")
+                          .attr("width", w)
+                          .attr("height", h);
+
+            var div = d3.select("#graph-div").append("div")
+                        .attr("class", "tooltip")
+                        .style("opacity", 0);
+            
+            //bars
+            svg.selectAll("circle")
+               .data(dataset)
+               .enter()
+               .append("circle")
+               .attr("class", "dot")
+               .attr("fill", (d, i) => {
+                   if (d['Doping'] == '') {
+                       return 'green';
+                   } else {
+                       return 'LightSalmon';
+                   }
+               })
+               .attr("r", '7')
+               .attr("data-xvalue", (d, i) => d['Year'])
+               .attr("data-yvalue", (d ,i) => minutesAndSeconds(secondToDate(d['Seconds'])))
+               .attr("cx", (d, i) => xScale(d['Year']))
+               .attr("cy", (d, i) => yScale(secondToDate(d['Seconds'])))
+               .on('mouseover', function (d, i) {
+                    d3.select(this).transition()
+                        .duration('10')
+                        .attr('fill', 'yellow');
+                    
+                    let fill;
+                    if (d['Doping'] == '') {
+                        fill = 'green';
+                    } else {
+                        fill = 'LightSalmon';
+                    }
+                    let name = d['Name'];
+                    let place = d['Place'];
+                    let nationality = d['Nationality'];
+                    let txt = name + ' from ' + nationality + ' (Rank: ' + place + ')<br>';
+                    txt += 'Time: ' + minutesAndSeconds(secondToDate(d['Seconds']));
+                    if (d['Doping'] == '') { //clean
+                        txt += '<br>Clean Player'
+                    } else {
+                        txt += '<br><br>Alleged Doping Case:<br>  ' + d['Doping'] + '<br>  URL: ' + d['URL'];
+                    }
+
+                    div.html(txt)
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 100) + "px")
+                        .style('background', fill);
+
+                    div.transition()
+                        .duration(50)
+                        .style("opacity", 1);
+               })
+               .on('mouseout', function (d, i) {
+                    let fill;
+                    if (d['Doping'] == '') {
+                        fill = 'green';
+                    } else {
+                        fill = 'LightSalmon';
+                    }
+                    d3.select(this).transition()
+                        .duration('10')
+                        .attr('fill', fill);
+                    div.transition()
+                        .duration('50')
+                        .style("opacity", 0);
+                });
+            
+            //axes
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('.4'));
+            const yAxis = d3.axisLeft(yScale).tickFormat(minutesAndSeconds);
+            svg.append("g")
+               .attr("id", "x-axis")
+               .attr("transform", "translate(0, " + (h - pad - epad) + ")")
+               .style("font-size", 16 + "px")
+               .call(xAxis);
+
+            svg.append("g")
+               .attr("id", "y-axis")
+               .attr("transform", "translate(" + (pad + epad) + ", 0)")
+               .style("font-size", 16 + "px")
+               .call(yAxis);
+
+            svg.append("text")
+               .text("Time in M:S")
+               .attr("x", (h - pad - epad) / 2)
+               .attr("y", -1)
+               .attr("class", "text-label-left");
+        
+            svg.append("text")
+               .text("Record Year")
+               .attr("x", (w - pad - epad) /2)
+               .attr("y", h - epad - 10)
+               .attr("class", "text-label-bottom");
+        
+            const legend_data = [{
+                    stuff: 'Doped Runs',
+                    color: 'LightSalmon'
+                },{
+                    stuff: 'Clean Runs',
+                    color: 'green'
+            }]
+            
+            let legend = svg.append('g')
+                .attr('id', 'legend');
+
+            legend.selectAll('rect')
+                .data(legend_data)
+                .enter().append('rect')
+                .attr('width', 25)
+                .attr('height', 25)
+                .attr('x', w - epad- 10)
+                .attr('y', (d, i) => (i * 30 + pad))
+                .attr('fill', (d, i) => d.color)
+                .attr('stroke', 'black');
+            
+            legend.selectAll('text')
+                .data(legend_data)
+                .enter().append('text')
+                .text((d) => d.stuff)
+                .attr('x', w - epad - 150)
+                .attr('y', (d, i) => (i * 25 + 23 + pad));
+            
+        }
+
+    </script>
+</body>
+</html>
